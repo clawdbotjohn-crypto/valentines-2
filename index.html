@@ -235,7 +235,7 @@
 
         /* Puzzle styling */
         .puzzle-container {
-            width: 42vh;
+            width: 300px;
             max-width: 100%;
             margin: 0 auto;
             background: linear-gradient(135deg, #fff5f7 0%, #ffe8ed 100%);
@@ -286,15 +286,15 @@
         .puzzle-tile {
             min-width: 0;
             min-height: 0;
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center;
             border-radius: 8px;
             cursor: pointer;
             transition: box-shadow 0.15s ease, border-radius 0.15s ease, transform 0.15s ease;
             box-shadow: 0 2px 8px rgba(196, 30, 58, 0.15);
             position: relative;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .puzzle-tile:hover:not(.empty) {
@@ -311,11 +311,16 @@
         .puzzle-tile.empty {
             box-shadow: none;
             cursor: default;
-            background: linear-gradient(135deg, #ffeef2 0%, #ffd6df 100%);
+            background: linear-gradient(135deg, #ffeef2 0%, #ffd6df 100%) !important;
         }
 
         .puzzle-tile.empty:hover {
             transform: none;
+        }
+
+        .puzzle-tile .tile-content {
+            font-size: 2.5em;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
         }
 
         .puzzle-full-image-overlay {
@@ -326,6 +331,10 @@
             opacity: 0;
             transition: opacity 0.3s ease;
             pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #ff6b8a 100%);
         }
 
         .puzzle-full-image-overlay.show {
@@ -333,11 +342,22 @@
             pointer-events: auto;
         }
 
-        .puzzle-full-image-overlay img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
+        .puzzle-full-image-overlay .heart-complete {
+            font-size: 120px;
+            animation: heartBeatBig 1.5s ease-in-out infinite;
+        }
+
+        @keyframes heartBeatBig {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.1); }
+        }
+
+        .puzzle-full-image-overlay .initials {
+            position: absolute;
+            font-size: 24px;
+            color: white;
+            font-style: italic;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* Reveal text */
@@ -484,7 +504,7 @@
                 font-size: 26px;
             }
             .puzzle-container {
-                max-width: min(320px, 40vh);
+                width: 260px;
             }
         }
 
@@ -501,6 +521,9 @@
             }
             .success-yay {
                 font-size: 22px;
+            }
+            .puzzle-container {
+                width: 240px;
             }
         }
 
@@ -545,7 +568,8 @@
                     <div class="puzzle-grid-wrap" id="puzzleGridWrap">
                         <div class="puzzle-grid" id="puzzleGrid"></div>
                         <div class="puzzle-full-image-overlay" id="puzzleFullImageOverlay">
-                            <img src="heart-complete.svg" alt="Heart" />
+                            <span class="heart-complete">❤️</span>
+                            <span class="initials">J + W</span>
                         </div>
                     </div>
                 </div>
@@ -620,22 +644,22 @@
             }, 300);
         });
         
-        // PUZZLE LOGIC
+        // PUZZLE LOGIC - Use heart emojis instead of numbers
         let tiles = [];
         const EMPTY_PIECE = 9; // Bottom-right corner empty
         const solution = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         let currentState = [...solution];
         
-        // Generate heart gradient tiles
-        const tileColors = [
-            'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-            'linear-gradient(135deg, #fecfef 0%, #ff9a9e 100%)',
-            'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-            'linear-gradient(135deg, #fda085 0%, #f6d365 100%)',
-            'linear-gradient(135deg, #ff6b8a 0%, #ffecd2 100%)',
-            'linear-gradient(135deg, #ffecd2 0%, #ff6b8a 100%)',
-            'linear-gradient(135deg, #fcb69f 0%, #ff9a9e 100%)',
-            'linear-gradient(135deg, #ff9a9e 0%, #fcb69f 100%)',
+        // Heart pieces with different emojis and gradient backgrounds
+        const tilePieces = [
+            { emoji: '💕', bg: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)' },
+            { emoji: '💗', bg: 'linear-gradient(135deg, #fecfef 0%, #ff9a9e 100%)' },
+            { emoji: '💖', bg: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' },
+            { emoji: '💝', bg: 'linear-gradient(135deg, #fda085 0%, #f6d365 100%)' },
+            { emoji: '❤️', bg: 'linear-gradient(135deg, #ff6b8a 0%, #ffecd2 100%)' },
+            { emoji: '💓', bg: 'linear-gradient(135deg, #ffecd2 0%, #ff6b8a 100%)' },
+            { emoji: '💞', bg: 'linear-gradient(135deg, #fcb69f 0%, #ff9a9e 100%)' },
+            { emoji: '💘', bg: 'linear-gradient(135deg, #ff9a9e 0%, #fcb69f 100%)' },
         ];
         
         function initPuzzle() {
@@ -677,17 +701,9 @@
                 if (piece === EMPTY_PIECE) {
                     tile.classList.add('empty');
                 } else {
-                    // Create heart piece with number
-                    tile.style.background = tileColors[piece - 1];
-                    tile.innerHTML = `<span style="
-                        position: absolute;
-                        top: 50%;
-                        left: 50%;
-                        transform: translate(-50%, -50%);
-                        font-size: 2em;
-                        color: white;
-                        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                    ">${piece}</span>`;
+                    const pieceData = tilePieces[piece - 1];
+                    tile.style.background = pieceData.bg;
+                    tile.innerHTML = `<span class="tile-content">${pieceData.emoji}</span>`;
                     tile.onclick = () => moveTile(index);
                 }
                 
@@ -720,11 +736,11 @@
             const puzzleRevealText = document.getElementById('puzzleRevealText');
             const puzzleFullImageOverlay = document.getElementById('puzzleFullImageOverlay');
             
-            // Fill the empty tile with same gradient
+            // Fill the empty tile
             const emptyTile = puzzleGrid.querySelector('.puzzle-tile.empty');
             if (emptyTile) {
                 emptyTile.style.background = 'linear-gradient(135deg, #ff6b8a 0%, #c41e3a 100%)';
-                emptyTile.innerHTML = '<span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2em;">❤️</span>';
+                emptyTile.innerHTML = '<span class="tile-content">💖</span>';
             }
             
             puzzleContainer.classList.add('completed');
