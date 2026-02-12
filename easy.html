@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💌 For Wanda</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #FFDAE9 0%, #FFE4EC 50%, #FFF0F5 100%);
+            overflow: auto;
+            padding: 24px;
+        }
+
+        /* Floating hearts background */
+        .floating-hearts {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .floating-heart {
+            position: absolute;
+            font-size: 20px;
+            opacity: 0.3;
+            animation: floatUp 15s infinite linear;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Envelope stage */
+        #envelopeStage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+        }
+
+        .tap-hint {
+            margin-top: 24px;
+            font-size: 14px;
+            color: #c41e3a;
+            opacity: 0;
+            animation: fadeInHint 1s ease 1.5s forwards;
+        }
+
+        @keyframes fadeInHint {
+            to { opacity: 0.7; }
+        }
+
+        body.show-modal .container {
+            display: flex;
+        }
+
+        .container {
+            display: none;
+            flex-direction: column;
+            text-align: center;
+            background: white;
+            padding: 40px 36px;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(196, 30, 58, 0.15);
+            width: fit-content;
+            max-width: min(650px, calc(100vw - 48px));
+            min-width: 0;
+            min-height: 520px;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+            position: relative;
+            z-index: 5;
+            animation: modalAppear 0.6s ease;
+        }
+
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-inner {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 0;
+            width: fit-content;
+            max-width: 100%;
+        }
+
+        .modal-view {
+            width: fit-content;
+            max-width: 100%;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            display: none;
+        }
+
+        .modal-view.visible {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Envelope styling */
+        .envelope {
+            position: relative;
+            width: 260px;
+            height: 190px;
+            background: linear-gradient(180deg, #f8f0e8 0%, #f5e6d3 100%);
+            border: 1px solid #e0d0bc;
+            border-radius: 6px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .envelope:hover:not(.opening) {
+            transform: scale(1.05) rotate(-1deg);
+            box-shadow: 0 12px 40px rgba(196, 30, 58, 0.2);
+        }
+
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(165deg, #f0e4d8 0%, #e8d5c4 45%, #dcc9b8 100%);
+            clip-path: polygon(0 0, 50% 55%, 100% 0);
+            transform-origin: top center;
+            transition: transform 0.8s cubic-bezier(0.34, 1.2, 0.64, 1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .envelope.opening .envelope-flap {
+            transform: rotateX(-170deg);
+        }
+
+        .envelope-heart {
+            position: absolute;
+            top: 52%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px;
+            height: 48px;
+            color: #c41e3a;
+            pointer-events: none;
+            z-index: 1;
+            transition: opacity 0.35s ease, transform 0.3s ease;
+            animation: heartPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes heartPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .envelope-heart.hidden {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.5);
+        }
+
+        .envelope-heart svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 2px 4px rgba(196, 30, 58, 0.3));
+        }
+
+        @media (min-width: 768px) {
+            .envelope {
+                width: 320px;
+                height: 232px;
+            }
+            .envelope-heart {
+                width: 56px;
+                height: 56px;
+            }
+        }
+
+        .envelope-stage-fade-out {
+            animation: envelopeFadeOut 0.5s ease forwards;
+        }
+
+        @keyframes envelopeFadeOut {
+            to { opacity: 0; transform: scale(0.96); }
+        }
+
+        /* Modal title */
+        .modal-view .modal-title {
+            font-size: 28px;
+            color: #c41e3a;
+            font-weight: 400;
+            line-height: 1.4;
+            margin-top: 16px;
+            margin-bottom: 24px;
+            font-style: italic;
+        }
+
+        /* Puzzle styling */
+        .puzzle-container {
+            width: 320px;
+            max-width: 100%;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #fff5f7 0%, #ffe8ed 100%);
+            padding: 12px;
+            border-radius: 16px;
+            box-shadow: inset 0 2px 10px rgba(196, 30, 58, 0.1);
+            transition: all 0.5s ease;
+        }
+
+        .puzzle-container.completed {
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+        }
+
+        .puzzle-grid-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            margin: 0 auto;
+        }
+
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 4px;
+            background: transparent;
+            padding: 0;
+            border-radius: 12px;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            inset: 0;
+            transition: gap 0.5s ease, opacity 0.5s ease;
+        }
+
+        .puzzle-grid.merging {
+            gap: 0;
+        }
+
+        .puzzle-grid.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .puzzle-tile {
+            min-width: 0;
+            min-height: 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(196, 30, 58, 0.2);
+            position: relative;
+            overflow: hidden;
+            background-size: 300% 300%;
+            background-repeat: no-repeat;
+        }
+
+        .puzzle-tile:hover:not(.empty) {
+            transform: scale(1.04);
+            box-shadow: 0 4px 15px rgba(196, 30, 58, 0.35);
+            z-index: 10;
+        }
+
+        .puzzle-tile:active:not(.empty) {
+            transform: scale(0.98);
+        }
+
+        .puzzle-grid.merging .puzzle-tile {
+            box-shadow: none;
+            border-radius: 0;
+        }
+
+        .puzzle-tile.empty {
+            box-shadow: none;
+            cursor: default;
+            background: linear-gradient(135deg, #ffeef2 0%, #ffd6df 100%) !important;
+            border: 2px dashed rgba(196, 30, 58, 0.3);
+        }
+
+        .puzzle-tile.empty:hover {
+            transform: none;
+        }
+
+        /* Full image reveal */
+        .puzzle-full-image {
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            pointer-events: none;
+        }
+
+        .puzzle-full-image.show {
+            opacity: 1;
+        }
+
+        .puzzle-full-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        /* Reveal text */
+        .puzzle-reveal-text {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+            margin-top: 28px;
+            pointer-events: none;
+        }
+
+        .puzzle-reveal-text.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .puzzle-reveal-text .complete-line {
+            font-size: 20px;
+            color: #555;
+            margin-bottom: 12px;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .puzzle-reveal-text .valentine-question {
+            font-size: 24px;
+            color: #c41e3a;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        /* Yes button */
+        .yes-only-btn {
+            font-size: 20px;
+            padding: 14px 48px;
+            background: linear-gradient(135deg, #ff6b8a 0%, #c41e3a 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 20px rgba(196, 30, 58, 0.3);
+        }
+
+        .yes-only-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 30px rgba(196, 30, 58, 0.45);
+        }
+
+        .yes-only-btn:active {
+            transform: scale(1.02);
+        }
+
+        /* Success view */
+        .container.container--success {
+            background: transparent;
+            box-shadow: none;
+            padding: 24px;
+        }
+
+        .success-content {
+            text-align: center;
+        }
+
+        .success-yay {
+            font-size: 32px;
+            font-weight: 400;
+            color: #c41e3a;
+            margin-bottom: 24px;
+            font-style: italic;
+        }
+
+        .success-heart {
+            font-size: 80px;
+            animation: heartBeat 1s ease-in-out infinite;
+            margin-bottom: 24px;
+        }
+
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.15); }
+        }
+
+        .success-message {
+            font-size: 18px;
+            color: #c41e3a;
+            line-height: 1.6;
+            max-width: 400px;
+            margin: 0 auto 24px;
+        }
+
+        .reset-btn {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 0.85em;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 8px 12px;
+            margin-top: 16px;
+            font-family: inherit;
+            transition: color 0.2s;
+        }
+
+        .reset-btn:hover {
+            color: #666;
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Move counter */
+        .move-counter {
+            font-size: 14px;
+            color: #888;
+            margin-top: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            body {
+                padding: 16px;
+            }
+            .container {
+                padding: 28px 24px;
+                max-width: 94%;
+                min-height: 420px;
+            }
+            .modal-view .modal-title {
+                font-size: 24px;
+            }
+            .puzzle-container {
+                width: 280px;
+            }
+            .puzzle-reveal-text .complete-line {
+                font-size: 18px;
+            }
+            .puzzle-reveal-text .valentine-question {
+                font-size: 20px;
+            }
+            .yes-only-btn {
+                font-size: 18px;
+                padding: 12px 36px;
+            }
+            .success-yay {
+                font-size: 26px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .modal-view .modal-title {
+                font-size: 20px;
+            }
+            .puzzle-container {
+                width: 240px;
+            }
+            .puzzle-reveal-text .complete-line,
+            .puzzle-reveal-text .valentine-question {
+                font-size: 16px;
+            }
+            .yes-only-btn {
+                font-size: 16px;
+            }
+            .success-yay {
+                font-size: 22px;
+            }
+        }
+
+        /* Short viewport scaling */
+        @media (max-height: 700px) {
+            .container {
+                transform: scale(0.92);
+                transform-origin: center center;
+            }
+        }
+        @media (max-height: 600px) {
+            .container {
+                transform: scale(0.82);
+            }
+        }
+
+        /* Preload image */
+        .preload-image {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Preload the couple image -->
+    <img src="couple.png" class="preload-image" alt="">
+
+    <!-- Floating hearts background -->
+    <div class="floating-hearts" id="floatingHearts"></div>
+
+    <!-- ENVELOPE STAGE -->
+    <div id="envelopeStage">
+        <div class="envelope" id="envelope">
+            <div class="envelope-heart" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path fill-rule="evenodd" d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="envelope-flap"></div>
+        </div>
+        <p class="tap-hint">tap to open</p>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+        <div class="modal-inner">
+            <!-- PUZZLE VIEW -->
+            <div id="puzzleView" class="modal-view">
+                <h1 class="modal-title">Dear Wanda...</h1>
+                <div class="puzzle-container" id="puzzleContainer">
+                    <div class="puzzle-grid-wrap" id="puzzleGridWrap">
+                        <div class="puzzle-grid" id="puzzleGrid"></div>
+                        <div class="puzzle-full-image" id="puzzleFullImage">
+                            <img src="couple.png" alt="Our love">
+                        </div>
+                    </div>
+                </div>
+                <div class="move-counter" id="moveCounter">Moves: 0</div>
+                <div class="puzzle-reveal-text" id="puzzleRevealText">
+                    <p class="complete-line">...you complete me.</p>
+                    <p class="valentine-question">Will you be my Valentine?</p>
+                    <button type="button" class="yes-only-btn" id="yesBtn">Yes! 💕</button>
+                </div>
+            </div>
+
+            <!-- SUCCESS VIEW -->
+            <div id="successView" class="modal-view">
+                <div class="success-content">
+                    <p class="success-yay">I love you so much! 💕</p>
+                    <div class="success-heart">❤️</div>
+                    <p class="success-message">
+                        Thank you for being the most amazing wife. 
+                        Every day with you is a gift, and I can't wait to spend 
+                        Valentine's Day (and every day) with you.
+                    </p>
+                    <p class="success-message" style="font-style: italic; color: #c41e3a;">
+                        Forever yours,<br>John
+                    </p>
+                    <button type="button" class="reset-btn" id="resetBtn">Start over</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Create floating hearts
+        function createFloatingHearts() {
+            const container = document.getElementById('floatingHearts');
+            const hearts = ['❤️', '💕', '💗', '💖', '💝'];
+            
+            for (let i = 0; i < 15; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'floating-heart';
+                heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.animationDelay = Math.random() * 15 + 's';
+                heart.style.animationDuration = 12 + Math.random() * 8 + 's';
+                heart.style.fontSize = 16 + Math.random() * 20 + 'px';
+                container.appendChild(heart);
+            }
+        }
+        createFloatingHearts();
+
+        // ENVELOPE → MODAL
+        const envelopeStage = document.getElementById('envelopeStage');
+        const envelope = document.getElementById('envelope');
+        const puzzleGrid = document.getElementById('puzzleGrid');
+        const puzzleView = document.getElementById('puzzleView');
+        const successView = document.getElementById('successView');
+        
+        envelope.addEventListener('click', () => {
+            envelope.style.pointerEvents = 'none';
+            const heart = envelope.querySelector('.envelope-heart');
+            heart.classList.add('hidden');
+            setTimeout(() => {
+                envelope.classList.add('opening');
+                setTimeout(() => {
+                    envelopeStage.classList.add('envelope-stage-fade-out');
+                    setTimeout(() => {
+                        envelopeStage.style.display = 'none';
+                        document.body.classList.add('show-modal');
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => puzzleView.classList.add('visible'));
+                        });
+                    }, 450);
+                }, 700);
+            }, 300);
+        });
+        
+        // PUZZLE LOGIC - 3x3 sliding puzzle with couple.png image
+        const GRID_SIZE = 3;
+        const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
+        const EMPTY_PIECE = TOTAL_TILES; // 9 is the empty spot
+        const solution = Array.from({length: TOTAL_TILES}, (_, i) => i + 1);
+        let currentState = [...solution];
+        let moveCount = 0;
+        let puzzleSolved = false;
+        
+        // Position mapping: tile number (1-9) maps to background-position
+        // Tile 1 = top-left, Tile 9 = bottom-right
+        function getBackgroundPosition(tileNum) {
+            const row = Math.floor((tileNum - 1) / GRID_SIZE);
+            const col = (tileNum - 1) % GRID_SIZE;
+            // background-position percentage: 0% = left/top, 50% = center, 100% = right/bottom
+            // For 3 tiles: 0%, 50%, 100%
+            const xPercent = col * 50;
+            const yPercent = row * 50;
+            return `${xPercent}% ${yPercent}%`;
+        }
+        
+        function initPuzzle() {
+            scramblePuzzle();
+            renderPuzzle();
+            updateMoveCounter();
+        }
+        
+        function scramblePuzzle() {
+            // Start one move away from solved: swap the empty tile with one neighbor
+            currentState = [...solution];
+            const emptyIndex = currentState.indexOf(EMPTY_PIECE);
+            const validMoves = getValidMoves(emptyIndex);
+            const randomNeighbor = validMoves[Math.floor(Math.random() * validMoves.length)];
+            [currentState[emptyIndex], currentState[randomNeighbor]] = [currentState[randomNeighbor], currentState[emptyIndex]];
+        }
+        
+        function isSolvable() {
+            // For a 3x3 puzzle with empty in bottom-right:
+            // Puzzle is solvable if number of inversions is even
+            let inversions = 0;
+            const tiles = currentState.filter(t => t !== EMPTY_PIECE);
+            for (let i = 0; i < tiles.length; i++) {
+                for (let j = i + 1; j < tiles.length; j++) {
+                    if (tiles[i] > tiles[j]) inversions++;
+                }
+            }
+            return inversions % 2 === 0;
+        }
+        
+        function getValidMoves(emptyIndex) {
+            const validMoves = [];
+            const row = Math.floor(emptyIndex / GRID_SIZE);
+            const col = emptyIndex % GRID_SIZE;
+            
+            if (row > 0) validMoves.push(emptyIndex - GRID_SIZE); // up
+            if (row < GRID_SIZE - 1) validMoves.push(emptyIndex + GRID_SIZE); // down
+            if (col > 0) validMoves.push(emptyIndex - 1); // left
+            if (col < GRID_SIZE - 1) validMoves.push(emptyIndex + 1); // right
+            
+            return validMoves;
+        }
+        
+        function renderPuzzle() {
+            puzzleGrid.innerHTML = '';
+            
+            currentState.forEach((piece, index) => {
+                const tile = document.createElement('div');
+                tile.className = 'puzzle-tile';
+                tile.dataset.index = index;
+                
+                if (piece === EMPTY_PIECE) {
+                    tile.classList.add('empty');
+                } else {
+                    tile.style.backgroundImage = 'url(couple.png)';
+                    tile.style.backgroundPosition = getBackgroundPosition(piece);
+                    tile.onclick = () => moveTile(index);
+                }
+                
+                puzzleGrid.appendChild(tile);
+            });
+        }
+        
+        function moveTile(index) {
+            if (puzzleSolved) return;
+            
+            const emptyIndex = currentState.indexOf(EMPTY_PIECE);
+            const validMoves = getValidMoves(emptyIndex);
+            
+            if (validMoves.includes(index)) {
+                // Swap tiles
+                [currentState[emptyIndex], currentState[index]] = [currentState[index], currentState[emptyIndex]];
+                moveCount++;
+                updateMoveCounter();
+                renderPuzzle();
+                
+                if (isPuzzleSolved()) {
+                    puzzleSolved = true;
+                    setTimeout(onPuzzleSolved, 400);
+                }
+            }
+        }
+        
+        function updateMoveCounter() {
+            document.getElementById('moveCounter').textContent = `Moves: ${moveCount}`;
+        }
+        
+        function isPuzzleSolved() {
+            return currentState.every((tile, index) => tile === solution[index]);
+        }
+        
+        function onPuzzleSolved() {
+            const puzzleContainer = document.getElementById('puzzleContainer');
+            const puzzleRevealText = document.getElementById('puzzleRevealText');
+            const puzzleFullImage = document.getElementById('puzzleFullImage');
+            const moveCounter = document.getElementById('moveCounter');
+            
+            // Hide move counter
+            moveCounter.style.opacity = '0';
+            
+            // First, fill in the empty tile with the correct piece
+            const emptyTile = puzzleGrid.querySelector('.puzzle-tile.empty');
+            if (emptyTile) {
+                emptyTile.classList.remove('empty');
+                emptyTile.style.backgroundImage = 'url(couple.png)';
+                emptyTile.style.backgroundPosition = getBackgroundPosition(EMPTY_PIECE);
+                emptyTile.style.border = 'none';
+            }
+            
+            // Merge the grid (remove gaps)
+            puzzleGrid.classList.add('merging');
+            
+            // After merge animation, fade to full image
+            setTimeout(() => {
+                puzzleFullImage.classList.add('show');
+                puzzleGrid.classList.add('hidden');
+                puzzleContainer.classList.add('completed');
+                
+                // Show reveal text
+                setTimeout(() => {
+                    puzzleRevealText.classList.add('show');
+                }, 400);
+            }, 600);
+        }
+        
+        initPuzzle();
+        
+        // YES BUTTON
+        const container = document.querySelector('.container');
+        document.getElementById('yesBtn').addEventListener('click', () => {
+            runConfettiFor(8000);
+            container.classList.add('container--success');
+            puzzleView.classList.remove('visible');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => successView.classList.add('visible'));
+            });
+        });
+        
+        // RESET BUTTON
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            window.location.reload();
+        });
+        
+        // CONFETTI
+        function runConfettiFor(ms) {
+            const end = Date.now() + ms;
+            function tick() {
+                if (Date.now() < end) {
+                    createConfetti();
+                    setTimeout(tick, 60);
+                }
+            }
+            tick();
+        }
+        
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.top = '-10px';
+            const shapes = ['❤️', '💕', '💖', '✨', '💗'];
+            const colors = ['#ff6b8a', '#c41e3a', '#ffd700', '#ff9a9e', '#fecfef'];
+            
+            if (Math.random() > 0.5) {
+                confetti.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+                confetti.style.fontSize = 12 + Math.random() * 12 + 'px';
+            } else {
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                confetti.style.width = 6 + Math.random() * 8 + 'px';
+                confetti.style.height = 6 + Math.random() * 8 + 'px';
+            }
+            
+            const duration = 2.5 + Math.random() * 2;
+            confetti.style.animation = `confetti-fall ${duration}s linear`;
+            document.body.appendChild(confetti);
+            setTimeout(() => confetti.remove(), (duration + 0.5) * 1000);
+        }
+    </script>
+</body>
+</html>
